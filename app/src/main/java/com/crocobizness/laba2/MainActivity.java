@@ -23,6 +23,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
     private static final String LOG_TAG = "AudioRecordError";
+    private long startRecordingTime;
+    private long endRecordingTime;
+    private boolean recording = false;
     private MediaRecorder mediaRecorder;
     private String fileName;
     private boolean permissionToRecordAccepted = false;
@@ -58,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void startRecord(){
         Date date = new Date();
         mediaRecorder = new MediaRecorder();
+        startRecordingTime = System.currentTimeMillis();
 
         fileName += date.getTime();
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -77,9 +81,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void stopRecord(){
         mediaRecorder.stop();
         mediaRecorder.release();
+        endRecordingTime = (System.currentTimeMillis() - startRecordingTime) * 1000;
+        int min = (int) (endRecordingTime / 60);
+        int sec = (int) (endRecordingTime - min);
+        String time = String.valueOf(min) + " : " + String.valueOf(sec);
         AppDatabase db = App.getInstance().getDatabase();
         AudioRecordDao audioRecordDao = db.audioRecordDao();
-        AudioRecord audioRecord = new AudioRecord(fileName,);
+        AudioRecord audioRecord = new AudioRecord(fileName,time);
         mediaRecorder = null;
     }
 
@@ -87,11 +95,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public boolean onTouch(View view, MotionEvent motionEvent) {
         switch (motionEvent.getActionMasked()){
             case MotionEvent.ACTION_DOWN:
-                startRecord();
+                if (!recording) {
+                    startRecord();
+                }
                 break;
-                case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_UP:
+                if (recording) {
                     stopRecord();
-                    break;
+                }
+                break;
         }
         return true;
     }
