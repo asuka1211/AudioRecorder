@@ -36,9 +36,9 @@
     </FrameLayout>
 
     <TextView
+        android:id="@+id/audio_item_time"
         android:layout_width="50dp"
         android:layout_height="match_parent"
-        android:id="@+id/audio_item_time"
         android:layout_below="@id/audio_item_name"
         android:layout_toRightOf="@id/audio_item_frame"
         android:layout_toEndOf="@id/audio_item_frame"/>

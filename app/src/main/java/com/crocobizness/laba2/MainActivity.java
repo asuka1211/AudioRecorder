@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -19,7 +20,7 @@ import com.crocobizness.laba2.database.AudioRecordDao;
 import java.io.IOException;
 import java.util.Date;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener,View.OnTouchListener {
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
     private static final String LOG_TAG = "AudioRecordError";
@@ -31,6 +32,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private boolean permissionToRecordAccepted = false;
     private String [] permissions = {Manifest.permission.RECORD_AUDIO};
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,12 +52,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         if (!permissionToRecordAccepted ) finish();
 
-    }
-
-    @Override
-    public void onClick(View view) {
-        if (view.getId() == R.id.audio_item_btnPlay){
-        }
     }
 
     private void startRecord(){
@@ -85,7 +81,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         int min = (int) (endRecordingTime / 60);
         int sec = (int) (endRecordingTime - min);
         String time = String.valueOf(min) + " : " + String.valueOf(sec);
-        AppDatabase db = App.getInstance().getDatabase();
+        AppDatabase db = AppDatabase.getDatabase(this);
         AudioRecordDao audioRecordDao = db.audioRecordDao();
         AudioRecord audioRecord = new AudioRecord(fileName,time);
         mediaRecorder = null;
