@@ -13,7 +13,7 @@ import java.util.List;
 public interface AudioRecordDao {
 
     @Query("SELECT * FROM audiorecord")
-    LiveData<List<AudioRecord>> getRecors();
+    LiveData<List<AudioRecord>> getRecords();
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     void insert(AudioRecord audioRecord);

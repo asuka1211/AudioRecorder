@@ -1,5 +1,6 @@
-package com.crocobizness.laba2;
+package com.crocobizness.laba2.ui;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,16 +10,17 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.crocobizness.laba2.R;
 import com.crocobizness.laba2.database.AudioRecord;
 
 import java.util.List;
 
-public class AudioRecordsAdaper extends RecyclerView.Adapter<AudioRecordsAdaper.ViewHolder> {
+public class AudioRecordsAdapter extends RecyclerView.Adapter<AudioRecordsAdapter.ViewHolder> {
 
     private List<AudioRecord> records;
     private LayoutInflater layoutInflater;
 
-    AudioRecordsAdaper(Context context){
+    AudioRecordsAdapter(Context context){
         layoutInflater = LayoutInflater.from(context);
     }
 
@@ -29,12 +31,14 @@ public class AudioRecordsAdaper extends RecyclerView.Adapter<AudioRecordsAdaper.
         return new ViewHolder(view);
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         if (records != null){
             AudioRecord current = records.get(position);
             holder.name.setText(current.getName());
-            holder.time.setText(current.getTime());
+            holder.timeEnd.setText(current.getTime());
+            holder.timeStart.setText("0:00");
         }
     }
 
@@ -53,12 +57,14 @@ public class AudioRecordsAdaper extends RecyclerView.Adapter<AudioRecordsAdaper.
 
     class ViewHolder extends RecyclerView.ViewHolder {
 
-        private TextView time;
+        private TextView timeEnd;
+        private TextView timeStart;
         private TextView name;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            time = itemView.findViewById(R.id.audio_item_time);
+            timeEnd = itemView.findViewById(R.id.audio_item_time_end);
+            timeStart = itemView.findViewById(R.id.audio_item_time_start);
             name = itemView.findViewById(R.id.audio_item_name);
         }
     }
