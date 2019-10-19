@@ -28,17 +28,14 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
 
+    private String path;
     private static final int REQUEST_RECORD_AUDIO_PERMISSION_AND_SAVE_DATA = 200;
     private static final String LOG_TAG = "AudioRecordError";
     private long startRecordingTime;
-    private long endRecordingTime;
     private boolean recording = false;
     private MediaRecorder mediaRecorder;
-    private String path;
     private String fileName;
     private boolean permissionToRecordAndSaveDataAccepted = false;
-    private boolean permissionToSaveExternalStorage = false;
-    private String [] permissions = {Manifest.permission.RECORD_AUDIO};
     private AudioRecordViewModel viewModel;
     private AudioRecordsAdapter adapter;
     private RecyclerView recyclerView;
@@ -55,7 +52,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 REQUEST_RECORD_AUDIO_PERMISSION_AND_SAVE_DATA);
         path = getExternalCacheDir().getAbsolutePath();
         Button btnRecord = (Button) findViewById(R.id.main_btnStartRecord);
-        Button btnPlay = (Button) findViewById(R.id.audio_item_btnPlay);
         btnRecord.setOnTouchListener(this);
         viewModel = ViewModelProviders.of(this).get(AudioRecordViewModel.class);
         adapter = new AudioRecordsAdapter(this);

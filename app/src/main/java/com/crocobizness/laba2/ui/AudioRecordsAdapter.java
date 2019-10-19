@@ -2,6 +2,7 @@ package com.crocobizness.laba2.ui;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,16 +13,24 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.crocobizness.laba2.R;
 import com.crocobizness.laba2.database.AudioRecord;
+import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.upstream.DataSource;
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 
+import java.io.File;
 import java.util.List;
 
 public class AudioRecordsAdapter extends RecyclerView.Adapter<AudioRecordsAdapter.ViewHolder> {
 
     private List<AudioRecord> records;
     private LayoutInflater layoutInflater;
+    private SimpleExoPlayer player;
 
     AudioRecordsAdapter(Context context){
         layoutInflater = LayoutInflater.from(context);
+        player = ExoPlayerFactory.newSimpleInstance(context);
     }
 
     @NonNull
@@ -67,5 +76,11 @@ public class AudioRecordsAdapter extends RecyclerView.Adapter<AudioRecordsAdapte
             timeStart = itemView.findViewById(R.id.audio_item_time_start);
             name = itemView.findViewById(R.id.audio_item_name);
         }
+    }
+
+    private void playAudio(AudioRecord audioRecord){
+        File audioTrack = new File(audioRecord.getPath());
+        Uri trackUri = Uri.fromFile(audioTrack);
+        MediaSource mediaSource =
     }
 }
