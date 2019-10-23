@@ -21,6 +21,10 @@ import android.widget.Button;
 import com.crocobizness.laba2.AudioRecordViewModel;
 import com.crocobizness.laba2.R;
 import com.crocobizness.laba2.database.AudioRecord;
+import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
+import com.google.android.exoplayer2.trackselection.TrackSelection;
 
 import java.io.IOException;
 import java.util.Date;
@@ -61,11 +65,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION_AND_SAVE_DATA) {
-            permissionToRecordAndSaveDataAccepted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            permissionToRecordAndSaveDataAccepted =
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED;
         }
         if (!permissionToRecordAndSaveDataAccepted ) {
             finish();
