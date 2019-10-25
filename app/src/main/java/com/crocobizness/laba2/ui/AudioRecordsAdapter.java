@@ -14,36 +14,35 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.crocobizness.laba2.R;
 import com.crocobizness.laba2.database.AudioRecord;
-import com.crocobizness.laba2.observer.EventListener;
-import com.crocobizness.laba2.observer.ExoPlayerEventObserver;
-import com.google.android.exoplayer2.SimpleExoPlayer;
 
 import java.util.Formatter;
 import java.util.List;
 import java.util.Locale;
 
-import static com.crocobizness.laba2.ui.MainActivity.getRecordTime;
 
 public class AudioRecordsAdapter extends RecyclerView.Adapter<AudioRecordsAdapter.ViewHolder> {
 
     private List<AudioRecord> records;
     private LayoutInflater layoutInflater;
-    private ExoPlayerEventObserver observer;
-
-    public void setObserver(ExoPlayerEventObserver observer) {
-        this.observer = observer;
-    }
+    public static final int VIEW_HOLDER = R.id.view_holder;
+    public static final int CURRENT_AUDIO_RECORD = R.id.current_audio_view;
 
     public interface Listener {
         void onClick(View view);
     }
 
+    public interface AudioPlayBackListener{
+        void seekBarStateChange(SeekBar seekBar);
+        void currentTimeChange(TextView textView);
+    }
 
     private Listener listener;
+    private AudioPlayBackListener playBackListener;
 
-    AudioRecordsAdapter(Context context,Listener listener){
+    AudioRecordsAdapter(Context context, Listener listener, AudioPlayBackListener playBackListener){
         layoutInflater = LayoutInflater.from(context);
         this.listener = listener;
+        this.playBackListener = playBackListener;
     }
 
     @NonNull
@@ -58,16 +57,13 @@ public class AudioRecordsAdapter extends RecyclerView.Adapter<AudioRecordsAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         if (records != null){
             AudioRecord current = records.get(position);
-            holder.play.setTag(current);
+            holder.play.setTag(VIEW_HOLDER,holder);
+            holder.play.setTag(CURRENT_AUDIO_RECORD,current);
             holder.play.setOnClickListener(this::onClick);
             holder.name.setText(current.getName());
             holder.timeEnd.setText(current.getTime());
             holder.timeStart.setText("0:00");
-            observer.subscribe(position,
-                    (EventListener<ExoPlayerEventObserver>) (eventType, t) -> {
-                holder.seekBar.setProgress((int) ((t.getPosition()*100)/t.getDuration()));
-                holder.timeStart.setText(stringForTime((int) t.getPosition()));
-            });
+
         }
     }
 
@@ -104,25 +100,11 @@ public class AudioRecordsAdapter extends RecyclerView.Adapter<AudioRecordsAdapte
 
     private void onClick(View view){
         listener.onClick(view);
+        ViewHolder holder = (ViewHolder) view.getTag(VIEW_HOLDER);
+        playBackListener.seekBarStateChange(holder.seekBar);
+        playBackListener.currentTimeChange(holder.timeStart);
     }
 
-    private String stringForTime(int timeMs) {
-        StringBuilder mFormatBuilder;
-        Formatter mFormatter;
-        mFormatBuilder = new StringBuilder();
-        mFormatter = new Formatter(mFormatBuilder, Locale.getDefault());
-        int totalSeconds =  timeMs / 1000;
 
-        int seconds = totalSeconds % 60;
-        int minutes = (totalSeconds / 60) % 60;
-        int hours   = totalSeconds / 3600;
-
-        mFormatBuilder.setLength(0);
-        if (hours > 0) {
-            return mFormatter.format("%d:%02d:%02d", hours, minutes, seconds).toString();
-        } else {
-            return mFormatter.format("%02d:%02d", minutes, seconds).toString();
-        }
-    }
 
 }
