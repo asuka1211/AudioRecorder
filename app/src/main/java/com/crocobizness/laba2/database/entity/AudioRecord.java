@@ -1,4 +1,4 @@
-package com.crocobizness.laba2.database;
+package com.crocobizness.laba2.database.entity;
 
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
@@ -6,10 +6,9 @@ import androidx.room.PrimaryKey;
 @Entity
 public class AudioRecord {
 
-    public AudioRecord(String name,String path, String time) {
+    public AudioRecord(String name,String path) {
         this.name = name;
         this.path = path;
-        this.time = time;
     }
 
     @PrimaryKey(autoGenerate = true)
@@ -18,8 +17,6 @@ public class AudioRecord {
     private String name;
 
     private String path;
-
-    private String time;
 
     public void setId(long id) {
         this.id = id;
@@ -35,14 +32,6 @@ public class AudioRecord {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getTime() {
-        return time;
-    }
-
-    public void setTime(String time) {
-        this.time = time;
     }
 
     public String getPath() {

@@ -1,13 +1,13 @@
-package com.crocobizness.laba2;
+package com.crocobizness.laba2.database;
 
 import android.app.Application;
 import android.os.AsyncTask;
 import androidx.lifecycle.LiveData;
 
-import com.crocobizness.laba2.database.AppDatabase;
-import com.crocobizness.laba2.database.AudioRecord;
-import com.crocobizness.laba2.database.AudioRecordDao;
+import com.crocobizness.laba2.database.dao.AudioRecordDao;
+import com.crocobizness.laba2.database.entity.AudioRecord;
 
+import java.io.File;
 import java.util.List;
 
 public class DataRepository {
@@ -40,7 +40,7 @@ public class DataRepository {
         private static final int DELETE = 1;
         private int mode;
 
-        DatabaseAsyncTask(AudioRecordDao audioRecordDao,int mode){
+        DatabaseAsyncTask(AudioRecordDao audioRecordDao, int mode){
             mDao = audioRecordDao;
             this.mode = mode;
         }
@@ -52,6 +52,8 @@ public class DataRepository {
                     mDao.insert(audioRecords[0]);
                     break;
                 case DELETE:
+                    File file = new File(audioRecords[0].getPath());
+                    boolean check = file.delete();
                     mDao.delete(audioRecords[0]);
                     break;
             }

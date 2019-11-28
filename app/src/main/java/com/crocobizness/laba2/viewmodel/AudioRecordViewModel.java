@@ -1,4 +1,4 @@
-package com.crocobizness.laba2;
+package com.crocobizness.laba2.viewmodel;
 
 import android.app.Application;
 
@@ -6,7 +6,8 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 
-import com.crocobizness.laba2.database.AudioRecord;
+import com.crocobizness.laba2.database.DataRepository;
+import com.crocobizness.laba2.database.entity.AudioRecord;
 
 import java.util.List;
 
@@ -23,6 +24,10 @@ public class AudioRecordViewModel extends AndroidViewModel {
 
     public void insert(AudioRecord audioRecord){
         dataRepository.insertRecord(audioRecord);
+    }
+
+    public void delete(AudioRecord audioRecord){
+        dataRepository.deleteRecord(audioRecord);
     }
 
     public LiveData<List<AudioRecord>> getRecords(){

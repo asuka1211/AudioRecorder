@@ -6,6 +6,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -13,22 +15,21 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.crocobizness.laba2.R;
-import com.crocobizness.laba2.database.AudioRecord;
+import com.crocobizness.laba2.database.entity.AudioRecord;
 
-import java.util.Formatter;
 import java.util.List;
-import java.util.Locale;
 
 
 public class AudioRecordsAdapter extends RecyclerView.Adapter<AudioRecordsAdapter.ViewHolder> {
 
     private List<AudioRecord> records;
     private LayoutInflater layoutInflater;
-    public static final int VIEW_HOLDER = R.id.view_holder;
+    public static final int IMG_VIEW = R.id.audio_item_img;
     public static final int CURRENT_AUDIO_RECORD = R.id.current_audio_view;
 
     public interface Listener {
         void onClick(View view);
+        void deleteItem(AudioRecord record);
     }
 
     public interface AudioPlayBackListener{
@@ -37,12 +38,10 @@ public class AudioRecordsAdapter extends RecyclerView.Adapter<AudioRecordsAdapte
     }
 
     private Listener listener;
-    private AudioPlayBackListener playBackListener;
 
-    AudioRecordsAdapter(Context context, Listener listener, AudioPlayBackListener playBackListener){
+    AudioRecordsAdapter(Context context, Listener listener){
         layoutInflater = LayoutInflater.from(context);
         this.listener = listener;
-        this.playBackListener = playBackListener;
     }
 
     @NonNull
@@ -57,12 +56,10 @@ public class AudioRecordsAdapter extends RecyclerView.Adapter<AudioRecordsAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         if (records != null){
             AudioRecord current = records.get(position);
-            holder.play.setTag(VIEW_HOLDER,holder);
+            holder.play.setTag(IMG_VIEW,holder.imageView);
             holder.play.setTag(CURRENT_AUDIO_RECORD,current);
             holder.play.setOnClickListener(this::onClick);
             holder.name.setText(current.getName());
-            holder.timeEnd.setText(current.getTime());
-            holder.timeStart.setText("0:00");
 
         }
     }
@@ -75,6 +72,10 @@ public class AudioRecordsAdapter extends RecyclerView.Adapter<AudioRecordsAdapte
         return 0;
     }
 
+    public void removeItem(int position) {
+        listener.deleteItem(records.get(position));
+    }
+
     public void setAudioRecords(List<AudioRecord> records){
         this.records = records;
         notifyDataSetChanged();
@@ -82,27 +83,21 @@ public class AudioRecordsAdapter extends RecyclerView.Adapter<AudioRecordsAdapte
 
     class ViewHolder extends RecyclerView.ViewHolder {
 
-        private TextView timeEnd;
-        private TextView timeStart;
+
         private TextView name;
-        private Button play;
-        private SeekBar seekBar;
+        private ImageButton play;
+        private ImageView imageView;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            timeEnd = itemView.findViewById(R.id.audio_item_time_end);
-            timeStart = itemView.findViewById(R.id.audio_item_time_start);
             name = itemView.findViewById(R.id.audio_item_name);
             play = itemView.findViewById(R.id.audio_item_btnPlay);
-            seekBar = itemView.findViewById(R.id.audio_item_seek_bar);
+            imageView = itemView.findViewById(R.id.audio_item_img);
         }
     }
 
     private void onClick(View view){
         listener.onClick(view);
-        ViewHolder holder = (ViewHolder) view.getTag(VIEW_HOLDER);
-        playBackListener.seekBarStateChange(holder.seekBar);
-        playBackListener.currentTimeChange(holder.timeStart);
     }
 
 

@@ -6,6 +6,9 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
+import com.crocobizness.laba2.database.dao.AudioRecordDao;
+import com.crocobizness.laba2.database.entity.AudioRecord;
+
 @Database(entities = {AudioRecord.class}, version = 1,exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 

@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Bundle;
@@ -18,18 +19,25 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.crocobizness.laba2.AudioRecordViewModel;
+import com.crocobizness.laba2.viewmodel.AudioRecordViewModel;
 import com.crocobizness.laba2.R;
-import com.crocobizness.laba2.database.AudioRecord;
+import com.crocobizness.laba2.database.entity.AudioRecord;
+import com.google.android.exoplayer2.ExoPlaybackException;
+import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
+import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
@@ -41,12 +49,11 @@ import java.util.Formatter;
 import java.util.Locale;
 import java.util.Objects;
 
-public class MainActivity extends AppCompatActivity implements View.OnTouchListener, Player.EventListener, AudioRecordsAdapter.AudioPlayBackListener {
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener, Player.EventListener {
 
     private String path;
     private static final int REQUEST_RECORD_AUDIO_PERMISSION_AND_SAVE_DATA = 200;
     private static final String LOG_TAG = "AudioRecordError";
-    private long startRecordingTime;
     private boolean recording = false;
     private MediaRecorder mediaRecorder;
     private String fileName;
@@ -55,30 +62,87 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private AudioRecordsAdapter adapter;
     private SimpleExoPlayer player;
     private DataSource.Factory dataSourceFactory;
+    private boolean isStart = false;
     private boolean isPlaying = false;
-    private Handler handler;
-    private Runnable runnableSeekBar;
-    private Runnable runnableTextView;
+    private Click click;
+    private RecyclerView recyclerView;
+    private ItemSwipeManager itemSwipeManager;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        RecyclerView recyclerView = findViewById(R.id.main_recycle_view);
+        recyclerView = findViewById(R.id.main_recycle_view);
         ActivityCompat.requestPermissions(this,
                 new String[] {Manifest.permission.RECORD_AUDIO,
                         Manifest.permission.WRITE_EXTERNAL_STORAGE},
                 REQUEST_RECORD_AUDIO_PERMISSION_AND_SAVE_DATA);
         path = Objects.requireNonNull(getExternalCacheDir()).getAbsolutePath();
         viewModel = ViewModelProviders.of(this).get(AudioRecordViewModel.class);
-        adapter = new AudioRecordsAdapter(this, this::prepareExoPlayer,this);
+        adapter = new AudioRecordsAdapter(this, new AudioRecordsAdapter.Listener() {
+            @Override
+            public void onClick(View view) {
+                prepareExoPlayer(view);
+            }
+
+            @Override
+            public void deleteItem(AudioRecord record) {
+                viewModel.delete(record);
+            }
+        });
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         subscribeUiRecord();
+        click = new Click();
+        itemSwipeManager = new ItemSwipeManager(this, new SwipeListenerImpl(adapter));
         Button btnRecord = findViewById(R.id.main_btnStartRecord);
         btnRecord.setOnTouchListener(this);
     }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        itemSwipeManager.attachToRecyclerView(recyclerView);
+    }
+
+    @Override
+    protected void onStop() {
+        itemSwipeManager.detachFromRecyclerView();
+        super.onStop();
+    }
+
+    private ExoPlayer.EventListener eventListener = new ExoPlayer.EventListener() {
+
+        @Override
+        public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
+        }
+
+        @Override
+        public void onLoadingChanged(boolean isLoading) { ;
+        }
+
+        @Override
+        public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+            switch (playbackState){
+                case ExoPlayer.STATE_ENDED:
+                    isPlaying = false;
+                    isStart = false;
+                    click.setPlayPause(true);
+                    break;
+                case ExoPlayer.STATE_READY:
+                    break;
+                case ExoPlayer.STATE_BUFFERING:
+                    break;
+                case ExoPlayer.STATE_IDLE:
+                    break;
+            }
+        }
+
+        @Override
+        public void onPlayerError(ExoPlaybackException error) {
+        }
+    };
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
@@ -97,7 +161,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private void startRecord(){
         Date date = new Date();
         mediaRecorder = new MediaRecorder();
-        startRecordingTime = System.currentTimeMillis();
         fileName = String.valueOf(date.getTime());
         path += fileName;
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -117,7 +180,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private void stopRecord(){
         mediaRecorder.stop();
         mediaRecorder.release();
-        AudioRecord audioRecord = new AudioRecord(fileName,path,getRecordTime(startRecordingTime));
+        AudioRecord audioRecord = new AudioRecord(fileName,path);
         viewModel.insert(audioRecord);
         mediaRecorder = null;
         recording = false;
@@ -142,11 +205,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         switch (motionEvent.getActionMasked()){
             case MotionEvent.ACTION_DOWN:
                 if (!recording) {
+                    view.setBackground(getResources().getDrawable(R.drawable.round_button_blue));
                     startRecord();
                 }
                 break;
             case MotionEvent.ACTION_UP:
                 if (recording) {
+                    view.setBackground(getResources().getDrawable(R.drawable.round_button_yellow));
                     stopRecord();
                 }
                 break;
@@ -155,24 +220,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     private void subscribeUiRecord(){
-        viewModel.getRecords().observe(this, audioRecords -> adapter.setAudioRecords(audioRecords));
-    }
-
-    public static String getRecordTime(long startRecordingTime){
-        long endRecordingTime = (System.currentTimeMillis() - startRecordingTime) / 1000;
-        int min = (int) (endRecordingTime / 60);
-        int sec = (int) (endRecordingTime % 60);
-        if (sec < 10){
-           return min + ":" + "0" + sec;
-        } else {
-            return min + ":" + sec;
-        }
+        viewModel.getRecords().observe(this,
+                audioRecords -> adapter.setAudioRecords(audioRecords));
     }
 
     private void initializeExoPlayer(){
         if (player == null) {
             player = ExoPlayerFactory.newSimpleInstance(this, new DefaultTrackSelector());
-            player.addListener(this);
+            player.addListener(eventListener);
             dataSourceFactory = new DefaultDataSourceFactory(this,
                     Util.getUserAgent(this, "Audio recorder"));
         }
@@ -187,93 +242,48 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     private void prepareExoPlayer(View view){
+        ImageView imageView = (ImageView) view.getTag(AudioRecordsAdapter.IMG_VIEW);
+        if (isStart && click.getBtnPlay() == imageView) {
+            click.setPlayPause(isPlaying);
+            return;
+        }
+        if (click.getBtnPlay() != imageView && click.getBtnPlay() != null) {
+            click.setPlayPause(true);
+        }
+
         AudioRecord audioRecord = (AudioRecord) view.getTag(AudioRecordsAdapter.CURRENT_AUDIO_RECORD);
         File audioTrack = new File(audioRecord.getPath());
         Uri trackUri = Uri.fromFile(audioTrack);
         MediaSource mediaSource = new ProgressiveMediaSource.Factory(dataSourceFactory)
                 .createMediaSource(trackUri);
         player.prepare(mediaSource);
-        player.setPlayWhenReady(true);
+        click.setBtnPlay(imageView);
+        click.setPlayPause(isPlaying);
+        isStart = true;
     }
 
+    private class Click{
 
-    @Override
-    public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-        if (playWhenReady && playbackState == Player.STATE_READY){
-            isPlaying = true;
-            handler.post(runnableSeekBar);
-            //handler.post(runnableTextView);
-        } else {
-            isPlaying = false;
-        }
-    }
+        private ImageView btnPlay;
 
-    @Override
-    public void seekBarStateChange(SeekBar seekBar) {
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
-
-        seekBar.setProgress(0);
-        seekBar.setMax((int) player.getDuration() / 1000 );
-
-        if (handler == null){
-            handler = new Handler();
+        public ImageView getBtnPlay() {
+            return btnPlay;
         }
 
-        runnableSeekBar = new Runnable() {
-            @Override
-            public void run() {
-                if (player != null && isPlaying) {
-                    seekBar.setProgress((int) (player.getCurrentPosition() / 1000));
-                    handler.postDelayed(this, 1000);
-                }
-            }
-        };
-    }
-
-    private String stringForTime(int timeMs) {
-        StringBuilder mFormatBuilder;
-        Formatter mFormatter;
-        mFormatBuilder = new StringBuilder();
-        mFormatter = new Formatter(mFormatBuilder, Locale.getDefault());
-        int totalSeconds =  timeMs / 1000;
-
-        int seconds = totalSeconds % 60;
-        int minutes = (totalSeconds / 60) % 60;
-        int hours   = totalSeconds / 3600;
-
-        mFormatBuilder.setLength(0);
-        if (hours > 0) {
-            return mFormatter.format("%d:%02d:%02d", hours, minutes, seconds).toString();
-        } else {
-            return mFormatter.format("%01d:%02d", minutes, seconds).toString();
+        public void setBtnPlay(ImageView btnPlay) {
+            this.btnPlay = btnPlay;
         }
-    }
 
-    @Override
-    public void currentTimeChange(TextView textView) {
-        runnableTextView = new Runnable() {
-            @Override
-            public void run() {
-                if (player != null && isPlaying){
-                    textView.setText(stringForTime((int) player.getCurrentPosition()));
-                    handler.postDelayed(this,1000);
-                }
+        private void setPlayPause(boolean play){
+            if(!play){
+                btnPlay.setImageResource(R.drawable.ic_pause_black_24dp);
+                isPlaying = true;
+                player.setPlayWhenReady(isPlaying);
+            } else {
+                btnPlay.setImageResource(R.drawable.ic_play_arrow_black_24dp);
+                isPlaying = false;
+                player.setPlayWhenReady(isPlaying);
             }
-        };
+        }
     }
 }
